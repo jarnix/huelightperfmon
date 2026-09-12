@@ -21,12 +21,50 @@ class AppConfigTests(unittest.TestCase):
         config = AppConfig.from_dict({"sensor": "cpu_total", "future_option": True})
         self.assertEqual(config.sensor, "cpu_total")
 
+    def test_existing_settings_gain_disabled_startup_default(self) -> None:
+        config = AppConfig.from_dict(
+            {
+                "bridge_url": "http://bridge",
+                "token": "saved-token",
+                "light_id": "9",
+                "brightness_min": 35,
+                "enabled": False,
+            }
+        )
+        self.assertEqual(config.bridge_url, "http://bridge")
+        self.assertEqual(config.token, "saved-token")
+        self.assertEqual(config.light_id, "9")
+        self.assertEqual(config.brightness_min, 35)
+        self.assertFalse(config.enabled)
+        self.assertFalse(config.start_with_windows)
+
     def test_appdata_location(self) -> None:
         path = app_data_directory({"APPDATA": "C:/Users/test/AppData/Roaming"})
         self.assertEqual(path.as_posix(), "C:/Users/test/AppData/Roaming/HueLightPerfMon")
 
 
 class ConfigStoreTests(unittest.TestCase):
+    def test_resaving_older_file_preserves_existing_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "settings.json"
+            existing = {
+                "bridge_url": "http://saved-bridge",
+                "token": "saved-token",
+                "light_id": "12",
+                "sensor": "cpu_total",
+                "brightness_min": 42,
+                "enabled": False,
+            }
+            path.write_text(json.dumps(existing), encoding="utf-8")
+            store = ConfigStore(path)
+
+            store.save(store.load())
+
+            saved = json.loads(path.read_text(encoding="utf-8"))
+            for key, value in existing.items():
+                self.assertEqual(saved[key], value)
+            self.assertFalse(saved["start_with_windows"])
+
     def test_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "settings.json"
@@ -46,4 +84,3 @@ class ConfigStoreTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

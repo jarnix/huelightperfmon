@@ -14,6 +14,7 @@ The app uses the Hue bridge's basic REST API (the `/api/<token>/lights/...` v1 e
 - Maps that same range to configurable minimum and maximum brightness.
 - Lets you query the bridge and select one of its lights.
 - Includes a **Test now** action before saving.
+- Can optionally start automatically when the current user signs in to Windows.
 - Saves configuration atomically to `%APPDATA%\HueLightPerfMon\config.json`.
 - Writes runtime errors to `%LOCALAPPDATA%\HueLightPerfMon\huelightperfmon.log`.
 - Builds as a single windowless Windows `.exe` with PyInstaller.
@@ -78,8 +79,9 @@ The executable is portable, but its configuration remains per-user in `%APPDATA%
 | Brightness | Intensity at the low and high sensor values |
 | Update interval | Time between sensor readings and Hue commands |
 | Hue transition | Transition duration sent to the bridge |
+| Start with Windows | Launch the tray app automatically when the current user signs in |
 
-The default mapping is 0–100% CPU, green–red, and 20–100% brightness, updated every two seconds.
+The default mapping is 0–100% CPU, green–red, and 20–100% brightness, updated every two seconds. **Start with Windows** is off by default, including when an existing configuration is first loaded by this version.
 
 ## Development checks
 

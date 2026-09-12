@@ -17,6 +17,7 @@ from huelightperfmon.hue import (
     normalize_bridge_url,
 )
 from huelightperfmon.sensors import SensorRegistry
+from huelightperfmon.startup import StartupError, set_start_with_windows
 
 
 class ConfigurationWindow:
@@ -35,6 +36,7 @@ class ConfigurationWindow:
         self._apply_config = apply_config
         self._schedule_ui = schedule_ui
         self._closed_callback = closed
+        self._original_start_with_windows = config.start_with_windows
         self._bridge_addresses: dict[str, str] = {}
         self._light_ids: dict[str, str] = {}
         self._pairing_dialog: PairingDialog | None = None
@@ -64,6 +66,7 @@ class ConfigurationWindow:
         self.update_seconds = tk.StringVar(value=f"{config.update_seconds:g}")
         self.transition_seconds = tk.StringVar(value=f"{config.transition_seconds:g}")
         self.enabled = tk.BooleanVar(value=config.enabled)
+        self.start_with_windows = tk.BooleanVar(value=config.start_with_windows)
         self.status = tk.StringVar(value="Enter the bridge details, then load the light list.")
 
         outer = ttk.Frame(self.window, padding=12)
@@ -147,6 +150,9 @@ class ConfigurationWindow:
         ttk.Checkbutton(frame, text="Run monitoring after saving", variable=self.enabled).grid(
             row=2, column=0, columnspan=2, sticky="w", pady=(5, 0)
         )
+        ttk.Checkbutton(frame, text="Start with Windows", variable=self.start_with_windows).grid(
+            row=3, column=0, columnspan=2, sticky="w", pady=(5, 0)
+        )
 
     def _color_row(self, frame: ttk.LabelFrame, row: int, label: str, variable: tk.StringVar) -> None:
         ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", padx=(0, 10), pady=3)
@@ -179,6 +185,7 @@ class ConfigurationWindow:
             update_seconds=float(self.update_seconds.get()),
             transition_seconds=float(self.transition_seconds.get()),
             enabled=self.enabled.get(),
+            start_with_windows=self.start_with_windows.get(),
         )
         config.validate(require_connection=require_connection)
         return config
@@ -359,10 +366,19 @@ class ConfigurationWindow:
         self.status.set(message)
 
     def _save(self) -> None:
+        startup_changed = False
         try:
             config = self._make_config(require_connection=True)
+            startup_changed = config.start_with_windows != self._original_start_with_windows
+            if startup_changed:
+                set_start_with_windows(config.start_with_windows)
             self._store.save(config)
-        except (ConfigError, ValueError, KeyError) as exc:
+        except (ConfigError, StartupError, ValueError, KeyError) as exc:
+            if startup_changed:
+                try:
+                    set_start_with_windows(self._original_start_with_windows)
+                except StartupError:
+                    pass
             self.status.set(str(exc))
             return
         self._apply_config(config)

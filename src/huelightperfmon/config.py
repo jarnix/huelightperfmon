@@ -32,6 +32,7 @@ class AppConfig:
     update_seconds: float = 2.0
     transition_seconds: float = 0.4
     enabled: bool = True
+    start_with_windows: bool = False
 
     @property
     def is_ready(self) -> bool:
