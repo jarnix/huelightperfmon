@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "huelightperfmon"
+version = "0.1.0"
+description = "Drive a Philips Hue light from a Windows performance sensor."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "Pillow>=10.0",
+    "psutil>=5.9",
+    "pystray>=0.19.5",
+    "zeroconf>=0.136",
+]
+
+[project.optional-dependencies]
+build = ["pyinstaller>=6.0"]
+
+[project.gui-scripts]
+hue-light-perfmon = "huelightperfmon.app:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
